@@ -91,7 +91,7 @@ int main(void)
 
 
 
-//cd "C:\users\n3400\documents\atmel studio\7.0\lab5"
+//cd "C:\users\n3400\documents\atmel studio\7.0\EmbeddedSystems\Lab5"
 //
 //git status
 //
