@@ -1,0 +1,34 @@
+# Atmel/Microchip Studio temporary files
+*.aps
+*.atsuo
+*.depend
+*.bak
+*.lss
+*.map
+*.elf
+*.eep
+*.hex
+*.srec
+*.d
+*.o
+*.a
+*.bin
+
+# Object and build folders
+Debug/
+Release/
+build/
+out/
+
+# Hidden Visual Studio/Atmel folders
+.vs/
+ipch/
+
+# User-specific files
+*.user
+*.suo
+*.ncb
+
+# Ignore backups and logs
+*~
+*.log
