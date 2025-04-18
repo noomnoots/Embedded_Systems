@@ -1,0 +1,87 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\Debug</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\Debug\Lab4.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>Lab4.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>Lab4.map</FILE>
+  <FILE>Lab4.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <fan_on_off_state><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>5</LINE></fan_on_off_state>
+  <last_nonzero_duty><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>6</LINE></last_nonzero_duty>
+  <scaled_duty><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>7</LINE></scaled_duty>
+  <old_pinb_snapshot><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>8</LINE></old_pinb_snapshot>
+  <oldAB><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>9</LINE></oldAB>
+  <dtxt><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>10</LINE></dtxt>
+  <FAN_ON_MSG><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>15</LINE></FAN_ON_MSG>
+  <FAN_OFF_MSG><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>16</LINE></FAN_OFF_MSG>
+  <DC_LABEL><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>17</LINE></DC_LABEL>
+  <reset><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>29</LINE></reset>
+  <PCINT0_ISR><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>112</LINE></PCINT0_ISR>
+  <PCINT2_ISR><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>143</LINE></PCINT2_ISR>
+  <DELAY_100MS><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>562</LINE></DELAY_100MS>
+  <LCD_INIT><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>249</LINE></LCD_INIT>
+  <LCD_CLEAR><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>273</LINE></LCD_CLEAR>
+  <DIVIDE_100><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>508</LINE></DIVIDE_100>
+  <LCD_DISPLAY_FLASH><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>328</LINE></LCD_DISPLAY_FLASH>
+  <main><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>108</LINE></main>
+  <_toggle_fan><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>120</LINE></_toggle_fan>
+  <fan_off><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>135</LINE></fan_off>
+  <LCD_UPDATE_FAN_STATE><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>337</LINE></LCD_UPDATE_FAN_STATE>
+  <update_duty_display><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>383</LINE></update_duty_display>
+  <handle_encoder><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>157</LINE></handle_encoder>
+  <encoder_CW><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>191</LINE></encoder_CW>
+  <encoder_CCW><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>195</LINE></encoder_CCW>
+  <inc_duty><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>203</LINE></inc_duty>
+  <dec_duty><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>226</LINE></dec_duty>
+  <inc_done><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>222</LINE></inc_done>
+  <inc_skip_pwm><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>220</LINE></inc_skip_pwm>
+  <dec_done><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>244</LINE></dec_done>
+  <dec_skip_pwm><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>242</LINE></dec_skip_pwm>
+  <LCD_WRITE_NIBBLE><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>314</LINE></LCD_WRITE_NIBBLE>
+  <DELAY_200MS><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>584</LINE></DELAY_200MS>
+  <LCD_WRITE_CMD><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>281</LINE></LCD_WRITE_CMD>
+  <LCD_WRITE_BYTE><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>295</LINE></LCD_WRITE_BYTE>
+  <LCD_WRITE_CHAR><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>288</LINE></LCD_WRITE_CHAR>
+  <DELAY_100US><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>553</LINE></DELAY_100US>
+  <print_fan_off><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>346</LINE></print_fan_off>
+  <print_flash_msg><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>349</LINE></print_flash_msg>
+  <LCD_PRINT_FLASH><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>354</LINE></LCD_PRINT_FLASH>
+  <PRINT_FLASH_LOOP><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>355</LINE></PRINT_FLASH_LOOP>
+  <PRINT_FLASH_DONE><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>361</LINE></PRINT_FLASH_DONE>
+  <displayDString><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>366</LINE></displayDString>
+  <dstring_loop><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>367</LINE></dstring_loop>
+  <dstring_done><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>373</LINE></dstring_done>
+  <copy_to_buf><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>378</LINE></copy_to_buf>
+  <DIVIDE_10><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>493</LINE></DIVIDE_10>
+  <build_space2><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>413</LINE></build_space2>
+  <build_ones2><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>416</LINE></build_ones2>
+  <update_duty_pwm><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>455</LINE></update_duty_pwm>
+  <div16u><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>467</LINE></div16u>
+  <div16u_loop><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>473</LINE></div16u_loop>
+  <div16u_skip><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>486</LINE></div16u_skip>
+  <DIV_LOOP><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>496</LINE></DIV_LOOP>
+  <DIV_DONE><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>502</LINE></DIV_DONE>
+  <DIV100_LOOP><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>510</LINE></DIV100_LOOP>
+  <DIV100_DONE><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>529</LINE></DIV100_DONE>
+  <print2digit><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>535</LINE></print2digit>
+  <DELAY_100US_LOOP><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>555</LINE></DELAY_100US_LOOP>
+  <DELAY_100MS_WAIT><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>576</LINE></DELAY_100MS_WAIT>
+  <DELAY_200MS_WAIT><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab4\Lab4\main.asm</FILE><LINE>598</LINE></DELAY_200MS_WAIT>
+ </LABELS>
+</ASSEMBLER_INFO>

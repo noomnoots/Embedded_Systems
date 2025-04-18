@@ -1,0 +1,41 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\Release</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328pdef.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\Release\Lab3_RPG.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>Lab3_RPG.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>Lab3_RPG.map</FILE>
+  <FILE>Lab3_RPG.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <init><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>22</LINE></init>
+  <digit_table><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>10</LINE></digit_table>
+  <display><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>96</LINE></display>
+  <main><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>44</LINE></main>
+  <check_rpgb><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>52</LINE></check_rpgb>
+  <increment_counter><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>57</LINE></increment_counter>
+  <decrement_counter><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>63</LINE></decrement_counter>
+  <update_after><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>68</LINE></update_after>
+  <use_digit><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>84</LINE></use_digit>
+  <wait_for_release><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>74</LINE></wait_for_release>
+  <wait_loop><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>76</LINE></wait_loop>
+  <shift_loop><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>99</LINE></shift_loop>
+  <set_ser><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>104</LINE></set_ser>
+  <clk_pulse><FILE>C:\Users\n3400\Documents\Atmel Studio\7.0\Lab3_RPG\Lab3_RPG\main.asm</FILE><LINE>106</LINE></clk_pulse>
+ </LABELS>
+</ASSEMBLER_INFO>
