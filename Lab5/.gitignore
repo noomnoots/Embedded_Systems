@@ -1,0 +1,29 @@
+# Ignore Microchip Studio build and temp files
+*.o
+*.d
+*.elf
+*.hex
+*.lss
+*.map
+*.eep
+*.srec
+*.bin
+
+# Ignore debug and release folders
+Debug/
+Release/
+build/
+
+# Ignore IDE-specific folders
+.vs/
+*.suo
+*.user
+*.aps
+*.ncb
+
+# Ignore autosave files and system junk
+*.bak
+*.tmp
+*.swp
+Thumbs.db
+.DS_Store
