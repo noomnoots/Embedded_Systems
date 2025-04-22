@@ -86,6 +86,7 @@ int main(void)
         {
             cmdBuf[idx] = '\0';          // null?terminate
             idx = 0;                     // reset for next command
+            if (cmdBuf[0] == '\0') continue;
 
             // G user input loogic
             if ((cmdBuf[0] == 'G' || cmdBuf[0] == 'g') && cmdBuf[1] == '\0')
@@ -151,6 +152,7 @@ int main(void)
         
     }
 }
+
 
 
 

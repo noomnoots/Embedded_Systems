@@ -120,9 +120,29 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="debounce.S">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="mp3.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="mp3.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rfid.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rfid.h">
+      <SubType>compile</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="credits.asm">
+      <SubType>compile</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
