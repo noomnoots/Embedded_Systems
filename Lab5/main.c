@@ -201,9 +201,9 @@ int main(void)
 	            i2cWrite(code);           uint8_t s4 = TWSR & 0xF8;
 	            i2cStop();
 
-	            char dbg[32];
-	            snprintf(dbg, sizeof dbg, "STS:%02X %02X %02X %02X\r\n", s1, s2, s3, s4);
-	            usartSendString(dbg);
+// 	            char dbg[32];
+// 	            snprintf(dbg, sizeof dbg, "STS:%02X %02X %02X %02X\r\n", s1, s2, s3, s4);
+// 	            usartSendString(dbg);
 
 	            char resp[48];
 	            snprintf(resp, sizeof resp,
@@ -227,7 +227,7 @@ int main(void)
 
 
 
-//cd "C:\users\n3400\documents\atmel studio\7.0\EmbeddedSystems\Lab5"
+//cd "C:\users\n3400\documents\atmel studio\7.0\EmbeddedSystems"
 //
 //git status
 //
