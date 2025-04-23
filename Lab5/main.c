@@ -3,17 +3,17 @@
  */
 
 #define F_CPU 16000000UL //Defined that Arduino runs at 16MHz
-#include <avr/io.h>
-#include <util/delay.h>  // Libraries
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <avr/io.h> //Defines all of the AVR register(PORTS, UDR0, ADMUX,TWDR)
+#include <util/delay.h>  //uses delay_ms() for blocking
+#include <stdlib.h> //atoi(), atof(), lroundf()
+#include <stdio.h> //print funcs
+#include <string.h> //string manipulation
+#include <math.h> //rounding functions
 
-#define BAUD     9600UL
-#define MYUBRR   ((F_CPU)/(16UL*BAUD) - 1)
+#define BAUD     9600UL //Buad rate (bits sent and received per second
+#define MYUBRR   ((F_CPU)/(16UL*BAUD) - 1) //UBRR = F_CPU/(16*Baud)-1
 
-// MAX517 fixed address (A0=A1=0)
+// MAX517 fixed address (A0=A1=0) (0b10110000)
 #define MAX517_SLA_W 0x58     // 7-bit 0x58 with write bit
 
 // declarations
@@ -24,40 +24,46 @@ char usartReceiveChar(void);
 void adcInit(void);
 uint16_t adcRead(uint8_t ch);
 
-// I2C helpers
+// I2C help
 void i2cInit(void);          // initialize TWI @100 kHz
 void i2cStart(void);         // send START
 void i2cWrite(uint8_t d);    // write byte, wait for ACK
 void i2cStop(void);          // send STOP
 
-// USART
-void usartInit(uint16_t ubrr)
+// USART-----------------------------------------------------------
+void usartInit(uint16_t ubrr) //ubrr 16bit divisor
 {
-    UBRR0H = (uint8_t)(ubrr >> 8);
-    UBRR0L = (uint8_t) ubrr;
-    UCSR0B = (1 << RXEN0) | (1 << TXEN0);   // set TX/RX
+    UBRR0H = (uint8_t)(ubrr >> 8); //top 8 bits
+    UBRR0L = (uint8_t) ubrr; //bottom 8 bits, (shifted out to hardware)
+    UCSR0B = (1 << RXEN0) | (1 << TXEN0);   // set TX/RX, in control reg UCSr0B 
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00); // 8-N-1
-}
+} //Once done oprates at 9600bps with 8bit frames
+
 void usartSendChar(char c)
-{
+{   //waiting for USART(UCSR0A status reg) data reg to be empty
     while (!(UCSR0A & (1 << UDRE0)));
-    UDR0 = c;
-}
-void usartSendString(const char *s)
+    UDR0 = c; //Once empty it writes char into data reg
+}   //UDR0 transmit data reg
+
+void usartSendString(const char *s) //takes C string, pointer to null-terminated array of chars
 {
-    while (*s) usartSendChar(*s++);
-}
+    while (*s) usartSendChar(*s++); //tests current char is non-zero
+}//Calls usartSendChar that blocks until the UART is ready then writes it out on PD1
+
 char usartReceiveChar(void)
-{
-    while (!(UCSR0A & (1 << RXC0)));
-    return UDR0;
+{ //RXC0 (receive complete) becomes 1 when the Uart hardware has received the char into UDR0
+    while (!(UCSR0A & (1 << RXC0))); //runs until char is on RXD(PD0)
+    return UDR0;//read and return UDR0, and clear the RXC0 flag, prepares for next byte
 }
 
-// ADC
+// ADC----------------------------------------------------------
+
 void adcInit(void)
 {
     ADMUX  = (1 << REFS0);                       // AVcc ref, ADC0 
-    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1); // clk/64
+    ADCSRA = (1 << ADEN) 
+				| (1 << ADPS2) 
+				| (1 << ADPS1); // clk/64
 }
 uint16_t adcRead(uint8_t ch)
 {
@@ -67,7 +73,7 @@ uint16_t adcRead(uint8_t ch)
     return ADC;
 }
 
-// I2C
+// I2C-----------------------------------------------------------------
 void i2cInit(void)
 {
     TWSR = 0;                                     // prescaler = 1
@@ -96,7 +102,7 @@ static void delaySeconds(uint8_t sec)
     while (sec--) { _delay_ms(1000); }
 }
 
-// Main
+// Main----------------------------------------------------------------------
 int main(void)
 {
     usartInit(MYUBRR);
