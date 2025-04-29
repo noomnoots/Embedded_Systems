@@ -1,0 +1,294 @@
+#define F_CPU 16000000UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <string.h>
+#include <stdio.h>
+
+// ==== LCD Configuration ====
+#define LCD_DATA_PORT PORTC
+#define LCD_DATA_DDR  DDRC
+#define LCD_CTRL_PORT PORTB
+#define LCD_CTRL_DDR  DDRB
+#define LCD_RS        PB0
+#define LCD_E         PB1
+#define OVERFLOWS_PER_SECOND 977
+
+void lcd_nibble(uint8_t nibble) {
+	LCD_DATA_PORT = (LCD_DATA_PORT & 0xF0) | (nibble & 0x0F);
+	LCD_CTRL_PORT |= (1 << LCD_E);
+	_delay_us(1);
+	LCD_CTRL_PORT &= ~(1 << LCD_E);
+	_delay_us(1);
+}
+
+void lcd_command(uint8_t cmd) {
+	LCD_CTRL_PORT &= ~(1 << LCD_RS);
+	lcd_nibble(cmd >> 4);
+	lcd_nibble(cmd & 0x0F);
+	_delay_us(40);
+}
+
+void lcd_data(uint8_t data) {
+	LCD_CTRL_PORT |= (1 << LCD_RS);
+	lcd_nibble(data >> 4);
+	lcd_nibble(data & 0x0F);
+	_delay_us(40);
+}
+
+void lcd_init(void) {
+	LCD_DATA_DDR |= 0x0F;
+	LCD_CTRL_DDR |= (1 << LCD_RS) | (1 << LCD_E);
+
+	_delay_ms(50);
+	lcd_nibble(0x03); _delay_ms(5);
+	lcd_nibble(0x03); _delay_us(150);
+	lcd_nibble(0x03); _delay_us(150);
+	lcd_nibble(0x02); // 4-bit mode
+
+	lcd_command(0x28);
+	lcd_command(0x0C);
+	lcd_command(0x06);
+	lcd_command(0x01);
+	_delay_ms(2);
+}
+
+void lcd_clear(void) {
+	lcd_command(0x01);
+	_delay_ms(2);
+}
+
+void lcd_gotoxy(uint8_t x, uint8_t y) {
+	lcd_command(0x80 + (y ? 0x40 : 0x00) + x);
+}
+
+void lcd_putc(char c) {
+	lcd_data(c);
+}
+
+void lcd_puts(const char *s) {
+	while (*s) lcd_putc(*s++);
+}
+
+// ==== Song List ====
+#define TOTAL_SONGS 10
+
+const char *titles[] = {
+	"Go Robot",
+	"Migra",
+	"Expresso",
+	"Sticky",
+	"Judas",
+	"Let It Be",
+	"Africa",
+	"Sweet Child O' Mine",
+	"Thunderstruck",
+	"Yesterday"
+};
+
+const char *artists[] = {
+	"RHCP",
+	"Santana",
+	"Sabrina Carpent",
+	"TylerTheCreator",
+	"Led Zeppelin",
+	"The Beatles",
+	"Toto",
+	"Guns N' Roses",
+	"AC/DC",
+	"The Beatles"
+};
+
+// ==== State ====
+volatile int song_index = 0;
+volatile int selected_song = -1;  // No song selected initially
+volatile uint8_t update_display = 1;
+volatile uint32_t last_scroll_time = 0; // in seconds
+
+// ==== Timer0 for 1s Tick ====
+void timer_init(void) {
+	TCCR0A = 0;
+	TCCR0B = (1 << CS01) | (1 << CS00); // 64 prescaler
+	TIMSK0 = (1 << TOIE0);
+	TCNT0 = 0;
+}
+
+ISR(TIMER0_OVF_vect) {
+	static uint16_t count = 0;
+	count++;
+	if (count >= OVERFLOWS_PER_SECOND) {
+		last_scroll_time++;
+		count = 0;
+	}
+}
+
+// ==== Rotary Encoder ====
+void encoder_init(void) {
+	DDRD &= ~((1 << PD2) | (1 << PD3));
+	PORTD |= (1 << PD2) | (1 << PD3);
+	EICRA |= (1 << ISC00);
+	EIMSK |= (1 << INT0);
+}
+
+ISR(INT0_vect) {
+	uint8_t A = (PIND & (1 << PD2)) >> PD2;
+	uint8_t B = (PIND & (1 << PD3)) >> PD3;
+
+	if (A != B)
+	song_index = (song_index + 1) % TOTAL_SONGS;
+	else
+	song_index = (song_index == 0) ? TOTAL_SONGS - 1 : song_index - 1;
+
+	last_scroll_time = 0;
+	update_display = 1;
+}
+
+// ==== Push Button ====
+#define BUTTON_PIN PD4
+
+void button_init(void) {
+	DDRD &= ~(1 << BUTTON_PIN);
+	PORTD |= (1 << BUTTON_PIN);
+}
+
+uint8_t button_pressed(void) {
+	static uint8_t last_state = 1;
+	uint8_t current = PIND & (1 << BUTTON_PIN);
+	if (!current && last_state) {
+		_delay_ms(50);
+		last_state = 0;
+		return 1;
+		} else if (current) {
+		last_state = 1;
+	}
+	return 0;
+}
+
+void display_song(int index) {
+	lcd_clear();
+	const char *title = titles[index];
+	const char *artist = artists[index];
+	size_t len = strlen(title);
+	uint32_t start_time = last_scroll_time;
+
+	if (len <= 16) {
+		lcd_gotoxy(0, 0);
+		lcd_puts(title);
+		lcd_gotoxy(0, 1);
+		lcd_puts(artist);
+		lcd_gotoxy(15, 1);
+		if (selected_song != -1 && index == selected_song) lcd_putc(0);
+		else lcd_putc(' ');
+
+		while ((last_scroll_time - start_time < 10) && !update_display) {
+			_delay_ms(100);
+		}
+		return;
+	}
+
+	char scroll_buffer[64];
+	snprintf(scroll_buffer, sizeof(scroll_buffer), "%s   %s", title, title);
+	size_t scroll_len = strlen(title) + 3;
+
+	while ((last_scroll_time - start_time < 10) && !update_display) {
+		lcd_gotoxy(0, 0);
+		for (int j = 0; j < 16; j++) lcd_putc(scroll_buffer[j]);
+		lcd_gotoxy(0, 1);
+		lcd_puts(artist);
+		lcd_gotoxy(15, 1);
+		if (selected_song != -1 && index == selected_song) lcd_putc(0);
+		else lcd_putc(' ');
+		_delay_ms(1000);
+
+		for (size_t i = 1; i < scroll_len; i++) {
+			if (update_display || (last_scroll_time - start_time >= 10)) return;
+
+			lcd_gotoxy(0, 0);
+			for (int j = 0; j < 16; j++) {
+				lcd_putc(scroll_buffer[i + j]);
+			}
+			lcd_gotoxy(0, 1);
+			lcd_puts(artist);
+			lcd_gotoxy(15, 1);
+			if (selected_song != -1 && index == selected_song) lcd_putc(0);
+			else lcd_putc(' ');
+
+			if (i == scroll_len - 1) _delay_ms(1500);
+			else _delay_ms(900);
+		}
+	}
+}
+
+uint8_t music_icon[8] = {
+	0b00000,
+	0b00100,
+	0b00110,
+	0b00101,
+	0b00101,
+	0b11100,
+	0b11100,
+	0b00000
+};
+
+void lcd_create_char(uint8_t location, uint8_t *charmap) {
+	location &= 0x7;
+	lcd_command(0x40 | (location << 3));
+	for (int i = 0; i < 8; i++) {
+		lcd_data(charmap[i]);
+	}
+}
+
+int main(void) {
+	lcd_init();
+	lcd_create_char(0, music_icon);
+	encoder_init();
+	button_init();
+	timer_init();
+	sei();
+
+	display_song(song_index);
+	update_display = 0;
+
+	while (1) {
+		if (button_pressed()) {
+			selected_song = song_index;
+			last_scroll_time = 0;
+			update_display = 1;
+		}
+
+		if (update_display) {
+			update_display = 0;
+			display_song(song_index);
+		}
+
+		if (selected_song != -1 && song_index != selected_song && last_scroll_time >= 10) {
+			song_index = selected_song;
+			update_display = 1;
+			last_scroll_time = 0;
+		}
+	}
+}
+
+
+
+//Push button
+//PD4
+//RPG Pin
+//A	PD2 
+//B	PD3 
+//C GND
+//| LCD Pin | Name | Connect To        | Notes                       |
+//|---------|------|-------------------|-----------------------------|
+//| 1       | VSS  | GND               | Ground                      |
+//| 2       | VCC  | +5V               | Power                       |
+//| 3       | V0   | resistor to ground| For contrast                |
+//| 4       | RS   | PB0 (Pin 14)      | Register Select             |
+//| 5       | RW   | GND               | Write only                  |
+//| 6       | E    | PB1 (Pin 15)      | Enable                      |
+//| 11      | D4   | PC0 (Pin 23)      | Data bit 4                  |
+//| 12      | D5   | PC1 (Pin 24)      | Data bit 5                  |
+//| 13      | D6   | PC2 (Pin 25)      | Data bit 6                  |
+//| 14      | D7   | PC3 (Pin 26)      | Data bit 7                  |
+//| 15      | LED+ | +5V			   | Backlight                 |
+//| 16      | LED- | GND               | Backlight ground            |	
