@@ -40,17 +40,15 @@ void lcd_data(uint8_t data) {
 void lcd_init(void) {
 	LCD_DATA_DDR |= 0x0F;
 	LCD_CTRL_DDR |= (1 << LCD_RS) | (1 << LCD_E);
-
 	_delay_ms(50);
 	lcd_nibble(0x03); _delay_ms(5);
 	lcd_nibble(0x03); _delay_us(150);
 	lcd_nibble(0x03); _delay_us(150);
 	lcd_nibble(0x02); // 4-bit mode
-
-	lcd_command(0x28);
-	lcd_command(0x0C);
-	lcd_command(0x06);
-	lcd_command(0x01);
+	lcd_command(0x28); // 2-line, 5x8
+	lcd_command(0x0C); // display on, no cursor
+	lcd_command(0x06); // entry mode
+	lcd_command(0x01); // clear
 	_delay_ms(2);
 }
 
@@ -90,8 +88,8 @@ const char *titles[] = {
 const char *artists[] = {
 	"RHCP",
 	"Santana",
-	"Sabrina Carpent",
-	"TylerTheCreator",
+	"Sabrina ",
+	"TylerTC",
 	"Led Zeppelin",
 	"The Beatles",
 	"Toto",
@@ -102,15 +100,18 @@ const char *artists[] = {
 
 // ==== State ====
 volatile int song_index = 0;
-volatile int selected_song = -1;  // No song selected initially
+volatile int selected_song = -1;
 volatile uint8_t update_display = 1;
 volatile uint32_t last_scroll_time = 0;
 volatile uint8_t rpg_moved = 0;
+volatile uint8_t no_credit_flag = 0;
+volatile uint32_t no_credit_time = 0;
+volatile uint8_t credits = 3;
 
 // ==== Timer0 for 1s Tick ====
 void timer_init(void) {
 	TCCR0A = 0;
-	TCCR0B = (1 << CS01) | (1 << CS00); // 64 prescaler
+	TCCR0B = (1 << CS01) | (1 << CS00);
 	TIMSK0 = (1 << TOIE0);
 	TCNT0 = 0;
 }
@@ -167,57 +168,7 @@ uint8_t button_pressed(void) {
 	return 0;
 }
 
-void display_song(int index) {
-	lcd_clear();
-	const char *title  = titles[index];
-	const char *artist = artists[index];
-	size_t len = strlen(title);
-
-	// SHORT TITLE: just show title & artist + icon if selected
-	if (len <= 16) {
-		lcd_gotoxy(0, 0);
-		lcd_puts(title);
-		lcd_gotoxy(0, 1);
-		lcd_puts(artist);
-		lcd_gotoxy(15, 1);
-		if (selected_song == index) lcd_putc(0);
-		return;
-	}
-
-	// LONG TITLE: build wrap buffer
-	char buf[128];
-	snprintf(buf, sizeof(buf), "%s   %s   ", title, title);
-	size_t buf_len = strlen(buf);
-	size_t scroll = 0;
-
-	// Scroll until encoder moves, button pressed, or we leave this song
-	while (song_index == index && !update_display) {
-		// LINE 1: 16 chars of buf
-		lcd_gotoxy(0, 0);
-		for (int j = 0; j < 16; j++) {
-			lcd_putc(buf[(scroll + j) % buf_len]);
-		}
-
-		// LINE 2: artist + icon
-		lcd_gotoxy(0, 1);
-		lcd_puts(artist);
-		lcd_gotoxy(15, 1);
-		if (selected_song == index) lcd_putc(0);
-
-		// ------ NEW: check button here ------
-		if (button_pressed()) {
-			selected_song = index;
-			update_display = 1;   // tell main loop to refresh
-			break;                // exit scroll immediately
-		}
-
-		_delay_ms(400);
-		scroll = (scroll + 1) % buf_len;
-	}
-}
-
-
-
+// ==== LCD Custom Characters ====
 uint8_t music_icon[8] = {
 	0b00000,
 	0b00100,
@@ -237,6 +188,75 @@ void lcd_create_char(uint8_t location, uint8_t *charmap) {
 	}
 }
 
+// ==== Display Function ====
+void display_song(int index) {
+	lcd_clear();
+	const char *title = titles[index];
+	const char *artist = artists[index];
+	size_t len = strlen(title);
+
+	if (len <= 16) {
+		lcd_gotoxy(0, 0);
+		lcd_puts(title);
+		lcd_gotoxy(0, 1);
+		lcd_puts(artist);
+
+		// music icon
+		if (selected_song == index) {
+			lcd_gotoxy(15, 1);
+			lcd_putc(0);
+		}
+
+		// credit count
+		char buf[6];
+		snprintf(buf, sizeof(buf), "C:%u", credits);
+		lcd_gotoxy(11, 1);
+		lcd_puts(buf);
+		return;
+	}
+
+	// Long title — scroll
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%s   %s   ", title, title);
+	size_t buf_len = strlen(buf);
+	size_t scroll = 0;
+
+	while (song_index == index && !update_display) {
+		lcd_gotoxy(0, 0);
+		for (int j = 0; j < 16; j++) {
+			lcd_putc(buf[(scroll + j) % buf_len]);
+		}
+
+		lcd_gotoxy(0, 1);
+		lcd_puts(artist);
+
+		if (selected_song == index) {
+			lcd_gotoxy(15, 1);
+			lcd_putc(0);
+		}
+
+		char buf2[6];
+		snprintf(buf2, sizeof(buf2), "C:%u", credits);
+		lcd_gotoxy(11, 1);
+		lcd_puts(buf2);
+
+		if (button_pressed()) {
+			if (credits > 0) {
+				credits--;
+				selected_song = index;
+				} else {
+				no_credit_flag = 1;
+				no_credit_time = last_scroll_time;
+			}
+			update_display = 1;
+			break;
+		}
+
+		_delay_ms(400);
+		scroll = (scroll + 1) % buf_len;
+	}
+}
+
 // ==== Main ====
 int main(void) {
 	lcd_init();
@@ -253,19 +273,34 @@ int main(void) {
 
 	while (1) {
 		if (button_pressed()) {
-			selected_song = song_index;
-			last_scroll_time = 0;
-			last_rpg_time = last_scroll_time;
-			update_display = 1;
+			if (credits > 0) {
+				if (selected_song == song_index) {
+					// Song is already playing, show message
+					no_credit_flag = 1;  // We will use no_credit_flag for showing this message
+					no_credit_time = last_scroll_time;
+					update_display = 1;
+				} else {
+					// Deduct credit and select song
+					credits--;
+					selected_song = song_index;
+					last_scroll_time = 0;
+					last_rpg_time = 0;
+					update_display = 1;
+				}
+			} else {
+				// No credits available, show "No credits!" message
+				no_credit_flag = 1;
+				no_credit_time = last_scroll_time;
+				update_display = 1;
+			}
 		}
 
-		// Track RPG movement
+
 		if (rpg_moved) {
 			last_rpg_time = last_scroll_time;
 			rpg_moved = 0;
 		}
 
-		// Return to selected song after 10s of no RPG activity
 		if (selected_song != -1 && song_index != selected_song &&
 		(last_scroll_time - last_rpg_time >= 10)) {
 			song_index = selected_song;
@@ -274,12 +309,38 @@ int main(void) {
 			update_display = 1;
 		}
 
+		if (no_credit_flag) {
+			if ((last_scroll_time - no_credit_time) == 0) {
+				lcd_clear();
+				if (selected_song == song_index) {
+					// Display "Song Already Playing!" on two lines
+					lcd_gotoxy(0, 0);
+					lcd_puts("Already Selected");
+					lcd_gotoxy(0, 1);
+					lcd_puts("  Choose Again");
+					} else {
+					// Display "No credits!" message on one line
+					lcd_gotoxy(0, 0);
+					lcd_puts("  No credits!");
+					lcd_gotoxy(0, 1);
+					lcd_puts("Scan RFID to add");
+				}
+			}
+			if ((last_scroll_time - no_credit_time) >= 3) {
+				no_credit_flag = 0;
+				update_display = 1;
+			}
+			continue;
+		}
+
+
 		if (update_display) {
 			update_display = 0;
 			display_song(song_index);
 		}
 	}
 }
+
 
 
 
