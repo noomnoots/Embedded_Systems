@@ -123,6 +123,9 @@
     <Compile Include="debounce.S">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="LCD_RFID_CRED.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
