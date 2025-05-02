@@ -3,10 +3,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <util/twi.h>
 #include <string.h>
 #include <stdio.h>
 
-// ==== LCD Configuration ====
+// ==== LCD CONFIG ====
 #define LCD_DATA_PORT PORTC
 #define LCD_DATA_DDR  DDRC
 #define LCD_CTRL_PORT PORTB
@@ -15,6 +16,49 @@
 #define LCD_E         PB1
 #define OVERFLOWS_PER_SECOND 977
 
+// ==== RFID ====
+#define RFID_ADDR 0x13
+#define MAX_UID_LEN 6
+const char admin_uid[MAX_UID_LEN] = {0x3A, 0x00, 0x6C, 0x34, 0xF9, 0x9B};
+const char user_uid[MAX_UID_LEN]  = {0x3A, 0x00, 0x6C, 0x6D, 0xBA, 0x81};
+
+// ==== SONGS ====
+#define TOTAL_SONGS 10
+const char *titles[] = {
+	"Go Robot", "Migra", "Expresso", "Sticky",
+	"Judas", "Let It Be", "Africa",
+	"Sweet Child O' Mine", "Thunderstruck", "Yesterday"
+};
+const char *artists[] = {
+	"RHCP", "Santana", "Sabrina ", "TylerTC",
+	"Led Zeppelin", "The Beatles", "Toto",
+	"Guns N' Roses", "AC/DC", "The Beatles"
+};
+
+volatile int song_index = 0;
+volatile int selected_song = -1;
+volatile uint8_t update_display = 1;
+volatile uint32_t last_scroll_time = 0;
+volatile uint8_t rpg_moved = 0;
+volatile uint8_t no_credit_flag = 0;
+volatile uint32_t no_credit_time = 0;
+volatile uint8_t credits = 3;
+volatile uint8_t prev_credits = 3;
+volatile uint8_t admin_mode = 0;
+
+// ==== LCD Custom Characters ====
+uint8_t music_icon[8] = {
+	0b00000,
+	0b00100,
+	0b00110,
+	0b00101,
+	0b00101,
+	0b11100,
+	0b11100,
+	0b00000
+};
+
+// ==== LCD Functions ====
 void lcd_nibble(uint8_t nibble) {
 	LCD_DATA_PORT = (LCD_DATA_PORT & 0xF0) | (nibble & 0x0F);
 	LCD_CTRL_PORT |= (1 << LCD_E);
@@ -44,12 +88,20 @@ void lcd_init(void) {
 	lcd_nibble(0x03); _delay_ms(5);
 	lcd_nibble(0x03); _delay_us(150);
 	lcd_nibble(0x03); _delay_us(150);
-	lcd_nibble(0x02); // 4-bit mode
-	lcd_command(0x28); // 2-line, 5x8
-	lcd_command(0x0C); // display on, no cursor
-	lcd_command(0x06); // entry mode
-	lcd_command(0x01); // clear
+	lcd_nibble(0x02);
+	lcd_command(0x28);
+	lcd_command(0x0C);
+	lcd_command(0x06);
+	lcd_command(0x01);
 	_delay_ms(2);
+}
+
+void lcd_create_char(uint8_t location, uint8_t *charmap) {
+	location &= 0x07;
+	lcd_command(0x40 | (location << 3));
+	for (uint8_t i = 0; i < 8; i++) {
+		lcd_data(charmap[i]);
+	}
 }
 
 void lcd_clear(void) {
@@ -69,46 +121,7 @@ void lcd_puts(const char *s) {
 	while (*s) lcd_putc(*s++);
 }
 
-// ==== Song List ====
-#define TOTAL_SONGS 10
-
-const char *titles[] = {
-	"Go Robot",
-	"Migra",
-	"Expresso",
-	"Sticky",
-	"Judas",
-	"Let It Be",
-	"Africa",
-	"Sweet Child O' Mine",
-	"Thunderstruck",
-	"Yesterday"
-};
-
-const char *artists[] = {
-	"RHCP",
-	"Santana",
-	"Sabrina ",
-	"TylerTC",
-	"Led Zeppelin",
-	"The Beatles",
-	"Toto",
-	"Guns N' Roses",
-	"AC/DC",
-	"The Beatles"
-};
-
-// ==== State ====
-volatile int song_index = 0;
-volatile int selected_song = -1;
-volatile uint8_t update_display = 1;
-volatile uint32_t last_scroll_time = 0;
-volatile uint8_t rpg_moved = 0;
-volatile uint8_t no_credit_flag = 0;
-volatile uint32_t no_credit_time = 0;
-volatile uint8_t credits = 3;
-
-// ==== Timer0 for 1s Tick ====
+// ==== Timer/Interrupt ====
 void timer_init(void) {
 	TCCR0A = 0;
 	TCCR0B = (1 << CS01) | (1 << CS00);
@@ -125,7 +138,6 @@ ISR(TIMER0_OVF_vect) {
 	}
 }
 
-// ==== Rotary Encoder ====
 void encoder_init(void) {
 	DDRD &= ~((1 << PD2) | (1 << PD3));
 	PORTD |= (1 << PD2) | (1 << PD3);
@@ -136,18 +148,16 @@ void encoder_init(void) {
 ISR(INT0_vect) {
 	uint8_t A = (PIND & (1 << PD2)) >> PD2;
 	uint8_t B = (PIND & (1 << PD3)) >> PD3;
-
 	if (A != B)
 	song_index = (song_index + 1) % TOTAL_SONGS;
 	else
 	song_index = (song_index == 0) ? TOTAL_SONGS - 1 : song_index - 1;
-
 	last_scroll_time = 0;
 	rpg_moved = 1;
 	update_display = 1;
 }
 
-// ==== Push Button ====
+// ==== Button ====
 #define BUTTON_PIN PD4
 
 void button_init(void) {
@@ -168,54 +178,84 @@ uint8_t button_pressed(void) {
 	return 0;
 }
 
-// ==== LCD Custom Characters ====
-uint8_t music_icon[8] = {
-	0b00000,
-	0b00100,
-	0b00110,
-	0b00101,
-	0b00101,
-	0b11100,
-	0b11100,
-	0b00000
-};
-
-void lcd_create_char(uint8_t location, uint8_t *charmap) {
-	location &= 0x7;
-	lcd_command(0x40 | (location << 3));
-	for (int i = 0; i < 8; i++) {
-		lcd_data(charmap[i]);
-	}
+// ==== I2C ====
+void i2c_init(void) {
+	TWBR = 0x48;
+	TWCR = (1 << TWEN);
 }
 
-// ==== Display Function ====
+uint8_t i2c_start(uint8_t address) {
+	TWCR = (1 << TWSTA) | (1 << TWEN) | (1 << TWINT);
+	while (!(TWCR & (1 << TWINT)));
+	TWDR = address;
+	TWCR = (1 << TWEN) | (1 << TWINT);
+	while (!(TWCR & (1 << TWINT)));
+	return (TWSR & 0xF8);
+}
+
+void i2c_stop(void) {
+	TWCR = (1 << TWSTO) | (1 << TWEN) | (1 << TWINT);
+	while (TWCR & (1 << TWSTO));
+}
+
+uint8_t i2c_read_ack(void) {
+	TWCR = (1 << TWEN) | (1 << TWINT) | (1 << TWEA);
+	while (!(TWCR & (1 << TWINT)));
+	return TWDR;
+}
+
+uint8_t i2c_read_nack(void) {
+	TWCR = (1 << TWEN) | (1 << TWINT);
+	while (!(TWCR & (1 << TWINT)));
+	return TWDR;
+}
+
+uint8_t read_rfid_uid(char *uid_buf) {
+	if (i2c_start(RFID_ADDR << 1) != TW_MT_SLA_ACK) return 0;
+	i2c_stop();
+	if (i2c_start((RFID_ADDR << 1) | 1) != TW_MR_SLA_ACK) return 0;
+	for (uint8_t i = 0; i < MAX_UID_LEN; i++) {
+		uid_buf[i] = (i < MAX_UID_LEN - 1) ? i2c_read_ack() : i2c_read_nack();
+	}
+	i2c_stop();
+	return 1;
+}
+
+// ==== Display ====
+void show_admin_message(uint8_t enabled) {
+	lcd_clear();
+	lcd_gotoxy(4, 0);
+	lcd_puts("ADMIN");
+	lcd_gotoxy(1, 1);
+	lcd_puts(enabled ? " MODE ENABLED" : "MODE DISABLED");
+	_delay_ms(4000);
+}
+
 void display_song(int index) {
 	lcd_clear();
 	const char *title = titles[index];
 	const char *artist = artists[index];
 	size_t len = strlen(title);
-
 	if (len <= 16) {
 		lcd_gotoxy(0, 0);
 		lcd_puts(title);
 		lcd_gotoxy(0, 1);
 		lcd_puts(artist);
-
-		// music icon
-		if (selected_song == index) {
-			lcd_gotoxy(15, 1);
-			lcd_putc(0);
-		}
-
-		// credit count
-		char buf[6];
-		snprintf(buf, sizeof(buf), "C:%u", credits);
 		lcd_gotoxy(11, 1);
-		lcd_puts(buf);
+		if (credits == 255)
+		lcd_puts("C:I");
+		else {
+			char buf[6];
+			snprintf(buf, sizeof(buf), "C:%u", credits);
+			lcd_puts(buf);
+		}
+		if (index == selected_song) {
+			lcd_gotoxy(15, 1);
+			lcd_putc(0); // music icon
+		}
 		return;
 	}
 
-	// Long title — scroll
 	char buf[128];
 	snprintf(buf, sizeof(buf), "%s   %s   ", title, title);
 	size_t buf_len = strlen(buf);
@@ -226,23 +266,23 @@ void display_song(int index) {
 		for (int j = 0; j < 16; j++) {
 			lcd_putc(buf[(scroll + j) % buf_len]);
 		}
-
 		lcd_gotoxy(0, 1);
 		lcd_puts(artist);
-
-		if (selected_song == index) {
-			lcd_gotoxy(15, 1);
-			lcd_putc(0);
-		}
-
-		char buf2[6];
-		snprintf(buf2, sizeof(buf2), "C:%u", credits);
 		lcd_gotoxy(11, 1);
-		lcd_puts(buf2);
-
+		if (credits == 255)
+		lcd_puts("C:I");
+		else {
+			char buf2[6];
+			snprintf(buf2, sizeof(buf2), "C:%u", credits);
+			lcd_puts(buf2);
+		}
+		if (index == selected_song) {
+			lcd_gotoxy(15, 1);
+			lcd_putc(0); // music icon
+		}
 		if (button_pressed()) {
 			if (credits > 0) {
-				credits--;
+				if (credits != 255) credits--;
 				selected_song = index;
 				} else {
 				no_credit_flag = 1;
@@ -251,7 +291,6 @@ void display_song(int index) {
 			update_display = 1;
 			break;
 		}
-
 		_delay_ms(400);
 		scroll = (scroll + 1) % buf_len;
 	}
@@ -261,6 +300,7 @@ void display_song(int index) {
 int main(void) {
 	lcd_init();
 	lcd_create_char(0, music_icon);
+	i2c_init();
 	encoder_init();
 	button_init();
 	timer_init();
@@ -268,33 +308,55 @@ int main(void) {
 
 	display_song(song_index);
 	update_display = 0;
-
 	uint32_t last_rpg_time = 0;
 
 	while (1) {
+		char uid[MAX_UID_LEN];
+		if (read_rfid_uid(uid)) {
+			if (memcmp(uid, admin_uid, MAX_UID_LEN) == 0) {
+				if (!admin_mode) {
+					prev_credits = credits;
+					credits = 255;
+					admin_mode = 1;
+					show_admin_message(1);
+					} else {
+					credits = prev_credits;
+					admin_mode = 0;
+					show_admin_message(0);
+				}
+				} else if (memcmp(uid, user_uid, MAX_UID_LEN) == 0) {
+				if (admin_mode) {
+					lcd_clear();
+					lcd_gotoxy(0, 0);
+					lcd_puts(" Incorrect Card");
+					lcd_gotoxy(0, 1);
+					lcd_puts("   Admin Only");
+					_delay_ms(4000);
+					} else if (credits < 254) {
+					credits++;
+				}
+			}
+			update_display = 1;
+			_delay_ms(1000);
+		}
+
 		if (button_pressed()) {
 			if (credits > 0) {
 				if (selected_song == song_index) {
-					// Song is already playing, show message
-					no_credit_flag = 1;  // We will use no_credit_flag for showing this message
+					no_credit_flag = 1;
 					no_credit_time = last_scroll_time;
-					update_display = 1;
-				} else {
-					// Deduct credit and select song
-					credits--;
+					} else {
+					if (credits != 255) credits--;
 					selected_song = song_index;
 					last_scroll_time = 0;
 					last_rpg_time = 0;
-					update_display = 1;
 				}
-			} else {
-				// No credits available, show "No credits!" message
+				} else {
 				no_credit_flag = 1;
 				no_credit_time = last_scroll_time;
-				update_display = 1;
 			}
+			update_display = 1;
 		}
-
 
 		if (rpg_moved) {
 			last_rpg_time = last_scroll_time;
@@ -313,13 +375,11 @@ int main(void) {
 			if ((last_scroll_time - no_credit_time) == 0) {
 				lcd_clear();
 				if (selected_song == song_index) {
-					// Display "Song Already Playing!" on two lines
 					lcd_gotoxy(0, 0);
 					lcd_puts("Already Selected");
 					lcd_gotoxy(0, 1);
 					lcd_puts("  Choose Again");
 					} else {
-					// Display "No credits!" message on one line
 					lcd_gotoxy(0, 0);
 					lcd_puts("  No credits!");
 					lcd_gotoxy(0, 1);
@@ -333,13 +393,14 @@ int main(void) {
 			continue;
 		}
 
-
 		if (update_display) {
 			update_display = 0;
 			display_song(song_index);
 		}
 	}
 }
+
+
 
 
 
