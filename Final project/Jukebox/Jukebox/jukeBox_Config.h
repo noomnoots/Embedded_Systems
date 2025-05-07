@@ -3,7 +3,7 @@
 #ifndef JBX_CONFIG_H
 #define JBX_CONFIG_H
 
-#define F_CPU 16000000UL      //* 16?MHz Arduino?Uno clock
+#define F_CPU 16000000UL      //* 16?MHz Arduino Uno clock
 
 //RIFD--------------------------------------
 #define RFID_ADDR   0x13
