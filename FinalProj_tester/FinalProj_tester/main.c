@@ -25,16 +25,16 @@ const char admin_uid[MAX_UID_LEN] = {0x3A, 0x00, 0x6C, 0x34, 0xF9, 0x9B};
 const char user_uid[MAX_UID_LEN]  = {0x3A, 0x00, 0x6C, 0x6D, 0xBA, 0x81};
 
 // ==== SONGS ====
-#define TOTAL_SONGS 10
+#define TOTAL_SONGS 9
 const char *titles[] = {
 	"Go Robot", "Migra", "Expresso", "Sticky",
 	"Judas", "Let It Be", "Africa",
-	"Sweet Child O' Mine", "Thunderstruck", "Yesterday"
+	"Sweet Child", "Thunderstruck"
 };
 const char *artists[] = {
 	"RHCP", "Santana", "Sabrina ", "TylerTC",
 	"Lady Gaga", "The Beatles", "Toto",
-	"Guns N' Roses", "AC/DC", "The Beatles"
+	"Guns N' R", "AC/DC"
 };
 
 volatile int song_index = 0;
@@ -44,7 +44,7 @@ volatile uint32_t last_scroll_time = 0;
 volatile uint8_t rpg_moved = 0;
 volatile uint8_t no_credit_flag = 0;
 volatile uint32_t no_credit_time = 0;
-volatile uint8_t credits = 0;
+volatile uint8_t credits = 3;
 volatile uint8_t prev_credits = 3;
 volatile uint8_t admin_mode = 0;
 
@@ -171,8 +171,8 @@ ISR(INT0_vect) {
 #define BUTTON_PIN PD4
 
 void button_init(void) {
-	DDRD &= ~(1 << BUTTON_PIN);
-	PORTD |= (1 << BUTTON_PIN);
+	DDRD &= ~(1 << BUTTON_PIN) | (1 << PD5);
+	PORTD |= (1 << BUTTON_PIN) | (1 << PD5); 
 }
 
 uint8_t button_pressed(void) {
@@ -188,6 +188,18 @@ uint8_t button_pressed(void) {
 	return 0;
 }
 
+uint8_t button_pressed2(void) {
+	static uint8_t last_state2 = 1;
+	uint8_t current = PIND & (1 << PD5);
+	if (!current && last_state2) {
+		_delay_ms(50);
+		last_state2 = 0;
+		return 1;
+		} else if (current) {
+		last_state2 = 1;
+	}
+	return 0;
+}
 // ==== I2C ====
 void i2c_init(void) {
 	TWBR = 0x48;
@@ -301,6 +313,13 @@ void display_song(int index) {
 			update_display = 1;
 			break;
 		}
+		if (button_pressed2()) {
+			if (admin_mode) {
+				mp3Toggle();
+			}
+			update_display = 1;
+			break;
+		}
 		_delay_ms(400);
 		scroll = (scroll + 1) % buf_len;
 	}
@@ -323,7 +342,7 @@ int main(void) {
 	button_init();
 	timer_init();
 	mp3Init(38400);
-	sei();
+	sei(); 
 
 
 	display_song(song_index);
@@ -378,6 +397,14 @@ int main(void) {
 				no_credit_time = last_scroll_time;
 			}
 			update_display = 1;
+		}
+		
+		if (button_pressed2()) {
+			if (admin_mode) {
+				mp3Toggle();
+			}
+			update_display = 1;
+			break;
 		}
 
 		if (rpg_moved) {

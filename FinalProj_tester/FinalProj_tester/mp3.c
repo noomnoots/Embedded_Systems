@@ -4,8 +4,9 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "mp3.h"
-
+#include <stdlib.h>
 #define MP3_SERIAL_UBRR(b)  ((F_CPU/(16UL*(b)))-1)
+
 
 static void usartSendByte(uint8_t c) {
 	while (!(UCSR0A & (1<<UDRE0)));
@@ -21,19 +22,30 @@ void mp3Init(uint32_t baud) {
 	UBRR0L = ubrr;
 	UCSR0B = (1<<TXEN0);
 	UCSR0C = (1<<UCSZ01)|(1<<UCSZ00);
-	_delay_ms(100);
+	_delay_ms(10);
+	
+	usartSendByte('T');
+	usartSendByte('1');
 }
 
 void mp3PlayTrack(uint16_t track) {
-	if (!track || track>255) return;
+	if (track < 1 || track > 9) return;
 	usartSendByte('O');
-	usartSendByte((track/100)      + '0');
-	usartSendByte(((track/10)%10)  + '0');
-	usartSendByte((track%10)       + '0');
+	_delay_ms(10);
+	
+	usartSendByte('O');
+	_delay_ms(10);
+	
+	usartSendByte('T');
+	usartSendByte(track + '0');
 }
 
-void mp3Next(void)   { usartSendByte('F'); }
-void mp3Toggle(void) { usartSendByte('O'); }
+void mp3Next(void)   { 
+	usartSendByte('F'); 
+	}
+void mp3Toggle(void) { 
+	usartSendByte('O'); 
+	}
 
 /* Busy on PB2 so PD3 is free for the encoder */
 #define BUSY_PIN PB2

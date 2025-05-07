@@ -120,10 +120,7 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="debounce.S">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="LCD_RFID_CRED.c">
+    <Compile Include="jukeBox_Config.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
