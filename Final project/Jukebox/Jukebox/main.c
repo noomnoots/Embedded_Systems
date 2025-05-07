@@ -11,8 +11,8 @@
 #include "jukebox_config.h"
 #include "mp3.h"
 
-/* -------------------------------------------------------------- */
-/* ---------- LCD wiring & helper macros------------ */
+
+// ---------- LCD wiring & helper macros
 #define LCD_DATA_PORT PORTC
 #define LCD_DATA_DDR  DDRC
 #define LCD_CTRL_PORT PORTB
@@ -20,9 +20,9 @@
 #define LCD_RS        PB0
 #define LCD_E         PB1
 #define OVERFLOWS_PER_SECOND 977
-/* -------------------------------------------------------------- */
+// --------------------------------------------------------------
 
-/* ---------- UIDs & song metadata (single defs) ---------- */
+// ---------- UIDs & song metadata (single defs) 
 const char admin_uid[MAX_UID_LEN] = {0x3A,0x00,0x6C,0x34,0xF9,0x9B};
 const char user_uid [MAX_UID_LEN] = {0x3A,0x00,0x6C,0x6D,0xBA,0x81};
 
@@ -45,11 +45,26 @@ volatile uint32_t last_scroll_time = 0;
 volatile uint8_t  rpg_moved        = 0;
 volatile uint8_t  no_credit_flag   = 0;
 volatile uint32_t no_credit_time   = 0;
-volatile uint8_t  credits          = 3;
-volatile uint8_t  prev_credits     = 3;
+volatile uint8_t  credits          = 0;
+volatile uint8_t  prev_credits     = 0;
 volatile uint8_t  admin_mode       = 0;
 volatile uint8_t  shuffle_mode     = 0;  
-volatile uint32_t pd5_press_time   = 0;   
+volatile uint32_t pd5_press_time   = 0; 
+volatile uint32_t shuffle_grace_until = 0; 
+volatile uint8_t track_finished = 0;
+
+  
+
+static void shuffle_play_next(void)
+{
+	selected_song = rand() % TOTAL_SONGS;
+	song_index    = selected_song;
+	mp3PlayTrack(selected_song + 1);
+	update_display = 1;          // refresh LCD with new title 
+	
+	shuffle_grace_until = last_scroll_time + .5;
+}
+
 
 //Music note
 uint8_t music_icon[8] = {
@@ -117,6 +132,22 @@ ISR(TIMER0_OVF_vect)
     }
 }
 
+//USART shuffle control
+ISR(USART_RX_vect)       
+{
+    uint8_t c = UDR0; 
+
+    if (c == 'X') {
+        track_finished = 1;    
+    }
+    /* Debug:
+       else if (c == 'x') {  }   // cancelled by new command
+       else if (c == 'E') {  }   // track number error
+    */
+}
+
+
+
 //RPG 
 static void encoder_init(void)
 {
@@ -155,7 +186,7 @@ static uint8_t btn_select_pressed(void)
     return 0;
 }
 
-//returns: 0?no event, 1?short (<2?s), 2?long (?2?s) 
+//returns: 0no event, 1short (<2s), 2long
 static uint8_t btn_admin_event(void)
 {
     static uint8_t  last = 1;
@@ -176,7 +207,7 @@ static uint8_t btn_admin_event(void)
 //I^2C stuff--------------------------------------------------
 static void i2c_init(void)
 {
-    TWBR = 0x48;            /* ?100?kHz at 16?MHz */
+    TWBR = 0x48;            
     TWCR = (1 << TWEN);
 }
 static uint8_t i2c_start(uint8_t addr)
@@ -284,26 +315,47 @@ int main(void)
             }else{                             // long press => shuffle toggle
                 shuffle_mode ^= 1;
                 lcd_clear(); lcd_gotoxy(3,0);
-                lcd_puts(shuffle_mode?"Shuffle ON":"Shuffle OFF");
-                _delay_ms(1500);
+                lcd_puts(shuffle_mode ? "Shuffle ON" : "Shuffle OFF");
+                _delay_ms(1000);
+
+                // If we just turned shuffle ON and no track is playing, start one
+                if(shuffle_mode && !mp3IsBusy())
+                shuffle_play_next();
+
             }
             update_display = 1;
         }
 
         //User select button (PD4)
-        if(btn_select_pressed() && !mp3IsBusy())
-        {
-            if(credits > 0 || admin_mode)
-            {
-                if(!admin_mode && credits != 255) credits--;
-                selected_song   = song_index;
-                mp3PlayTrack(selected_song + 1);
-            }
-            else{
-                no_credit_flag = 1; no_credit_time = last_scroll_time;
-            }
-            update_display = 1;
-        }
+       /* ---------- USER SELECT BUTTON (PD4) ------------------------ */
+       if(btn_select_pressed())
+       {
+	       if(mp3IsBusy())                     /* a track is still playing */
+	       {
+		       /* politely ask user to wait */
+		       lcd_clear();
+		       lcd_gotoxy(0,0); lcd_puts("Please wait...");
+		       lcd_gotoxy(0,1); lcd_puts("Track in progress");
+		       _delay_ms(1500);
+		       update_display = 1;             /* redraw current song next loop */
+	       }
+	       else                                /* idle ? OK to play new track  */
+	       {
+		       if(credits > 0 || admin_mode)
+		       {
+			       if(!admin_mode && credits != 255) credits--;
+			       selected_song = song_index;
+			       mp3PlayTrack(selected_song + 1);
+		       }
+		       else                            /* no credits */
+		       {
+			       no_credit_flag = 1;
+			       no_credit_time = last_scroll_time;
+		       }
+		       update_display = 1;
+	       }
+       }
+
 
         //Encoder turn logic
         if(rpg_moved){ last_rpg_time = last_scroll_time; rpg_moved = 0; }
@@ -316,21 +368,34 @@ int main(void)
             update_display = 1;
         }
 
-        //shuffle and nice stuff
-        if(shuffle_mode && !mp3IsBusy())
-        {
-            static uint32_t last_auto = 0;
-            if(last_scroll_time - last_auto >= 1){
-                last_auto = last_scroll_time;
-                selected_song = rand() % TOTAL_SONGS;
-                song_index    = selected_song;
-                mp3PlayTrack(selected_song + 1);
-                update_display = 1;
-            }
+       // shuffling pick a new song only after the last one ends
+       static uint8_t busy_prev = 1;                 // remember last BUSY level 
+       uint8_t busy_now = mp3IsBusy();
+
+       if(shuffle_mode && !busy_now && busy_prev)    // falling?edge = finished 
+       {
+	       selected_song = rand() % TOTAL_SONGS;
+	       song_index    = selected_song;
+	       mp3PlayTrack(selected_song + 1);
+	       update_display = 1;                       // refresh LCD once 
+       }
+       busy_prev = busy_now;
+
+
+      // ---------- SHUFFLE based on X message
+      if(shuffle_mode && track_finished)
+      {
+	      track_finished = 0;
+	      shuffle_play_next();
+      }
+
+
+        // DISPLAY REFRESH--------------------------------
+        if(update_display){
+	        update_display = 0;
+	        display_song(song_index);
         }
 
-        //displaying refresh
-        if(update_display){ update_display = 0; display_song(song_index); }
     }
 }
 

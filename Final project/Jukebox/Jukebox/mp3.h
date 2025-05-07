@@ -11,4 +11,5 @@ void mp3Toggle(void);               /* play/pause toggle        */
 void mp3Stop(void);                 /* explicit stop            */
 uint8_t mp3IsBusy(void);            /* BUSY line (PB2 == 0)     */
 
+
 #endif /* MP3_H */

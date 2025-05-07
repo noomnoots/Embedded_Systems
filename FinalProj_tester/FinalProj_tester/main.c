@@ -475,5 +475,5 @@ int main(void) {
 //| 12      | D5   | PC1 (Pin 24)      | Data bit 5                  |
 //| 13      | D6   | PC2 (Pin 25)      | Data bit 6                  |
 //| 14      | D7   | PC3 (Pin 26)      | Data bit 7                  |
-//| 15      | LED+ | +5V			   | Backlight                 |
+//| 15      | LED+ | +5V			   | Backlight                   |
 //| 16      | LED- | GND               | Backlight ground            |
