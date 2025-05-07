@@ -76,49 +76,61 @@ uint8_t music_icon[8] = {
 };
 
 //LCD Driver stuff-----------------------------------------------------
-static void lcd_nibble(uint8_t n)
+static void lcd_nibble(uint8_t n) //sends 4-bitt nibble
 {
-    LCD_DATA_PORT = (LCD_DATA_PORT & 0xF0) | (n & 0x0F);
-    LCD_CTRL_PORT |=  (1 << LCD_E);
-    _delay_us(1);
-    LCD_CTRL_PORT &= ~(1 << LCD_E);
-    _delay_us(1);
+    LCD_DATA_PORT = (LCD_DATA_PORT & 0xF0) | (n & 0x0F);//put high nibble as unchanged
+    LCD_CTRL_PORT |=  (1 << LCD_E); //sets E = 1
+    _delay_us(1); // holds for a microsecond
+    LCD_CTRL_PORT &= ~(1 << LCD_E); //E = 0 (data receieved)
+    _delay_us(1); //lets bus settle
 }
+
 static void lcd_command(uint8_t c)
 {
-    LCD_CTRL_PORT &= ~(1 << LCD_RS);
-    lcd_nibble(c >> 4); lcd_nibble(c & 0x0F);
-    _delay_us(40);
+    LCD_CTRL_PORT &= ~(1 << LCD_RS);  //RS = 0 -> instruct register
+    lcd_nibble(c >> 4); //loads high 4 bits first
+	 lcd_nibble(c & 0x0F); //loads low 4 bits
+    _delay_us(40); //gives some delay for commands to go through
 }
+
 static void lcd_data(uint8_t d)
 {
-    LCD_CTRL_PORT |= (1 << LCD_RS);
-    lcd_nibble(d >> 4); lcd_nibble(d & 0x0F);
-    _delay_us(40);
+    LCD_CTRL_PORT |= (1 << LCD_RS); //RS = 1 -> data reg
+    lcd_nibble(d >> 4); //high nib
+	lcd_nibble(d & 0x0F); //low nib
+    _delay_us(40); //delay for commands
 }
-static void lcd_init(void)
+
+static void lcd_init(void) //initialize LCD
 {
-    LCD_DATA_DDR |= 0x0F;
-    LCD_CTRL_DDR |= (1 << LCD_RS) | (1 << LCD_E);
-    _delay_ms(50);
-    lcd_nibble(0x03); _delay_ms(5);
+    LCD_DATA_DDR |= 0x0F; //PC0-PC3 outputs (D4-D7)
+    LCD_CTRL_DDR |= (1 << LCD_RS) | (1 << LCD_E); //(PB0, PB1) outputs
+    _delay_ms(50); // waits for 50 ms after power up
+	
+    lcd_nibble(0x03); _delay_ms(5); //delays for 8-bit mode
     lcd_nibble(0x03); _delay_us(150);
     lcd_nibble(0x03); _delay_us(150);
-    lcd_nibble(0x02);
-    lcd_command(0x28); lcd_command(0x0C);
-    lcd_command(0x06); lcd_command(0x01);
-    _delay_ms(2);
+	
+    lcd_nibble(0x02); //switches to 4-bit mode
+	
+    lcd_command(0x28); lcd_command(0x0C); //func set to 4-bitm 2 lines, 5x8
+    lcd_command(0x06); lcd_command(0x01); //display on, curser off, blinking off
+    _delay_ms(2); //clears
 }
+
 static void lcd_create_char(uint8_t loc, uint8_t *map)
 {
-    lcd_command(0x40 | ((loc & 0x07) << 3));
-    for(uint8_t i=0;i<8;i++) lcd_data(map[i]);
+    lcd_command(0x40 | ((loc & 0x07) << 3)); //sets CGRAM address
+    for(uint8_t i=0;i<8;i++) lcd_data(map[i]); //writes 8bitmap rows
 }
-static void lcd_clear(void)                       { lcd_command(0x01); _delay_ms(2); }
-static void lcd_gotoxy(uint8_t x,uint8_t y)       { lcd_command(0x80 + (y?0x40:0) + x); }
-static void lcd_putc(char c)                      { lcd_data(c); }
-static void lcd_puts(const char*s){ while(*s) lcd_putc(*s++); }
 
+static void lcd_clear(void)                       { lcd_command(0x01); _delay_ms(2); } // erases all characters and resets DDRAM address to 0
+static void lcd_gotoxy(uint8_t x,uint8_t y)       { lcd_command(0x80 + (y?0x40:0) + x); } // sets DDRAM address/starts adresses low and 
+	//sets row offset
+static void lcd_putc(char c)                      { lcd_data(c); } //wrapper to forward one character  and handles RS line, 4-bit splits, and delay
+static void lcd_puts(const char*s){ while(*s) lcd_putc(*s++); } //pritns C-string to display one char at a time
+	//increments the pointer after each character
+	// relies on LCD_put c to get 40microsec delay per byte
 //timer 0(1Hz)-----------------------------------------------
 static void timer_init(void)
 {
@@ -314,7 +326,7 @@ int main(void)
 	PORTB |=  (1<<PB2);
 
 	sei();                           // enable global interrupts
-	srand(13);                       // Set seed for shuffle mode
+	srand(TCNT0_1);                       // Set seed for shuffle mode
 
 	// Display the first song on startup
 	display_song(song_index);
@@ -474,5 +486,5 @@ int main(void)
 //| 12      | D5   | PC1 (Pin 24)      | Data bit 5                  |
 //| 13      | D6   | PC2 (Pin 25)      | Data bit 6                  |
 //| 14      | D7   | PC3 (Pin 26)      | Data bit 7                  |
-//| 15      | LED+ | +5V			     | Backlight                   |
+//| 15      | LED+ | +5V			   | Backlight                   |
 //| 16      | LED- | GND               | Backlight ground            |
