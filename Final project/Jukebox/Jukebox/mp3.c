@@ -38,11 +38,6 @@ void mp3Stop(void) {
 	usartSendByte('O');
 }
 
-// Sends F to play the next track
-void mp3Next(void) {
-	usartSendByte('F');
-}
-
 // Plays a specific track on the MP3
 void mp3PlayTrack(uint8_t track)
 {

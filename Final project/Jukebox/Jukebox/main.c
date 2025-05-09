@@ -326,7 +326,7 @@ int main(void)
 	PORTB |=  (1<<PB2);
 
 	sei();                           // enable global interrupts
-	srand(TCNT0_1);                       // Set seed for shuffle mode
+	srand(12);                       // Set seed for shuffle mode
 
 	// Display the first song on startup
 	display_song(song_index);
